@@ -1,4 +1,5 @@
-﻿using System;
+using FluentValidation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,61 +10,58 @@ using UGDAT.Business.Validations;
 
 namespace UGDAT.Business.Services
 {
-    
-    public class ValidationService : IValidation 
+
+    public class ValidationService : IValidation
     {
-        Task<string> IValidation.Validar(string file)
+        public Task<string> Validar(string arquivo)
         {
-          
-            const string sourcePath = @"C:\repositorio\bi_desenv\fazenda\cargas_textos\ressarcimento\importar\";
-            //const string targetPath = @"C:\repositorio\bi_desenv\fazenda\cargas_textos\ressarcimento\lidos";
-
-
+           
             string line;
-
-            using (var fs = File.OpenRead(sourcePath))
-            using (var reader = new StreamReader(fs))
-
-
-                while ((line = reader.ReadLine()) != null)
-                {
-
-                    if (line.StartsWith("0"))
+            
+            using(var reader = new StreamReader(arquivo))
+            while((line = reader.ReadLine()) !=null)
+            {
+                    if (line.StartsWith("0000"))
                     {
-                        var abertura = new Abertura();
-                        var ValidationFile = new AberturaValidation();
-                        
-                        Console.WriteLine($"Valindando {abertura}");
+                        var parts = line.Split('|');
+                        var ValidationFile = new AberturaValidation(line);
+                        return Task.FromResult("Abertura valida");
                     }
-                    else if (line.StartsWith("1"))
-                    {
-                        var primeiroBloco = new PrimeiroBloco();
-                        var ValidationFile = new PrimeiroBlocoValidation();
+                    else if (line.StartsWith("1000"))
+                    { 
+                        var ValidationFile = new PrimeiroBlocoValidation(line);
+                        return Task.FromResult("Primeiro Bloco valido");
+                    }
+                    else if (line.StartsWith("2000"))
+                        { 
+                            var ValidationFile = new SegundoBlocoValidation(line);
+                            return Task.FromResult("Segundo Bloco valido");
+                    }
+                    else if (line.StartsWith("3000"))
+                        { 
+                            var ValidationFile = new TerceiroBlocoValidation(line);
+                            return Task.FromResult("Terceiro Bloco valido");
+                    }
+                    else if (line.StartsWith("4000"))
+                        { 
+                            var ValidationFile = new QuartoBlocoValidation(line);
+                            return Task.FromResult("Quarto bloco valido"); 
+                        }
 
-                        Console.WriteLine($"Valindando {primeiroBloco}");
-                    }
-                    else if (line.StartsWith("2"))
-                    {
-                        var segundoBloco = new SegundoBloco();
-                        var ValidationFile = new SegundoBlocoValidation();
-                    }
-                    else if (line.StartsWith("3"))
-                    {
-                        var terceiroBloco = new TerceiroBloco();
-                        var ValidationFile = new TerceiroBlocoValidation();
-                    }
-                    else if (line.StartsWith("4"))
-                    {
-                        var terceiroBloco = new QuartoBloco();
-                        var ValidationFile = new QuartoBlocoValidation();
-                    }
+                    var Importar = @"C:\repositorio\bi_desenv\fazenda\cargas_textos\ressarcimento\importar\";
+                    var Ignorados = @"C:\repositorio\bi_desenv\fazenda\cargas_textos\ressarcimento\ignorados\";
+                    var Zipados = @"C:\repositorio\bi_desenv\fazenda\cargas_textos\ressarcimento\zipados\";
+
+
+                    string zipado = Path.Combine(Zipados, Path.GetFileName(arquivo));
+                    File.Copy(Path.Combine(Importar, arquivo), Path.Combine(Zipados, zipado), true);
+                    //File.Copy(sourceFileName: Importar, destFileName: Zipados, overwrite: true);
+                    return Task.FromResult("Arquivo Validado");
+
                 }
-
-                return   Task.FromResult("Arquivo validado com sucesso");
-
+            return Task.FromResult("Arquivo Invalido");
         }
-
-        
     }
-    
+
 }
+    
